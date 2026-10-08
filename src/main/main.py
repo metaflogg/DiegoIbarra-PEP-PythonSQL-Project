@@ -97,8 +97,6 @@ def load_and_clean_call_logs(file_path):
     )
     conn.commit()
 
-    print("TODO: load_call_logs")
-
 
 # This function will write analytics data to testUserAnalytics.csv - average call time, and number of calls per user.
 # You must save records consisting of each userId, avgDuration, and numCalls
@@ -116,13 +114,22 @@ def write_user_analytics(csv_file_path):
         writer = csv.writer(file)
         writer.writerow(["userId", "avgDuration", "numCalls"])
         writer.writerows(results)
-        
-    print("TODO: write_user_analytics")
 
 
 # This function will write the callLogs ordered by userId, then start time.
 # Then, write the ordered callLogs to orderedCalls.csv
 def write_ordered_calls(csv_file_path):
+    cursor.execute(''' 
+        SELECT callId, phoneNumber, startTime, endTime, direction, userId
+        FROM callLogs
+        ORDER BY userId, startTime
+    ''')
+
+    results = cursor.fetchall()
+
+    with open(csv_file_path, "w", newline) as file:
+        writer = csv.writer(file)
+        writer.writerow()
 
     print("TODO: write_ordered_calls")
 
