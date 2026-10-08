@@ -78,7 +78,7 @@ def load_and_clean_users(file_path):
                 
                 records.append((row[0].strip(), row[1].strip()))
     except OSError as error:
-        print(f"Error reading" {file_path}: {error})
+        print(f"Error reading" {file_path}: {error}")
         raise
 
     try:   
@@ -176,7 +176,7 @@ def write_ordered_calls(csv_file_path):
     Sort records by userId and then startTime in ascending
     order before writing them to the output file.
     """
-    
+
     try:
         cursor.execute(''' 
             SELECT callId, phoneNumber, startTime, endTime, direction, userId
