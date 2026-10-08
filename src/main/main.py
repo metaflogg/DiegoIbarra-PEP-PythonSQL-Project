@@ -69,7 +69,7 @@ def load_and_clean_users(file_path):
             records.append((row[0].strip(), row[1].strip()))
         
     cursor.executemany(
-        "INSERT INTO users (firstname, lastname) VALUES (?, ?)", records
+        '''INSERT INTO users (firstname, lastname) VALUES (?, ?)''', records
     )
     conn.commit()
 
@@ -92,8 +92,8 @@ def load_and_clean_call_logs(file_path):
             records.append(tuple(item.strip() for item in row))
     
     cursor.executemany(
-        "INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId)\
-        VALUES (?, ?, ?, ?, ?)", records
+        '''INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId)
+        VALUES (?, ?, ?, ?, ?)''', records
     )
     conn.commit()
 
