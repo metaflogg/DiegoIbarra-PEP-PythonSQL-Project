@@ -92,7 +92,7 @@ def load_and_clean_call_logs(file_path):
             records.append(tuple(item.strip() for item in row))
     
     cursor.executemany(
-        "INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId),\
+        "INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId)\
         VALUES (?, ?, ?, ?, ?)", records
     )
     conn.commit()
