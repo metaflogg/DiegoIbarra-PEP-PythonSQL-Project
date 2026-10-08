@@ -78,7 +78,7 @@ def load_and_clean_users(file_path):
                 
                 records.append((row[0].strip(), row[1].strip()))
     except OSError as error:
-        print(f"Error reading" {file_path}: {error}")
+        print(f"Error reading {file_path}: {error}")
         raise
 
     try:   
