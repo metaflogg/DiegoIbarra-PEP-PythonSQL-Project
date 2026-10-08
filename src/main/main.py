@@ -127,7 +127,7 @@ def write_ordered_calls(csv_file_path):
 
     results = cursor.fetchall()
 
-    with open(csv_file_path, "w", newline) as file:
+    with open(csv_file_path, "w", newline="") as file:
         writer = csv.writer(file)
         writer.writerow()
 
