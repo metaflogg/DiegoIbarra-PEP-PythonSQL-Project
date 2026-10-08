@@ -36,9 +36,9 @@ def main():
 
     # You will implement these methods below. They just print TO-DO messages for now.
     load_and_clean_users(os.path.join(_RESOURCES_DIR, 'users.csv'))
-    load_and_clean_call_logs(os.path.join(_RESOURCES_DIR, 'callLogs.csv'))
-    write_user_analytics(os.path.join(_RESOURCES_DIR, 'userAnalytics.csv'))
-    write_ordered_calls(os.path.join(_RESOURCES_DIR, 'orderedCalls.csv'))
+    #load_and_clean_call_logs(os.path.join(_RESOURCES_DIR, 'callLogs.csv'))
+    #write_user_analytics(os.path.join(_RESOURCES_DIR, 'userAnalytics.csv'))
+    #write_ordered_calls(os.path.join(_RESOURCES_DIR, 'orderedCalls.csv'))
 
     # Helper method that prints the contents of the users and callLogs tables. Uncomment to see data.
     # select_from_users_and_call_logs()
@@ -53,6 +53,26 @@ def main():
 
 # This function will load the users.csv file into the users table, discarding any records with incomplete data
 def load_and_clean_users(file_path):
+    with open(file_path, "r", newline="") as file:
+        reader = reader.csv(file)
+        # Skip header firstname, lastname
+        next(reader)
+        records = []
+
+        for row in reader:
+            if len(row) != 2:
+                continue
+
+            if not row[0].strip() or not row[1].strip():
+                continue
+            
+            records.append((row[0].strip(), row[1].strip()))
+        
+    cursor.executemany(
+        "INSERT INTO users (firstname, lastname) VALUES (?, ?)", records
+    )
+    conn.commit()
+
 
     print("TODO: load_users")
 
