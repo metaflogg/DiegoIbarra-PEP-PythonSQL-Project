@@ -34,7 +34,6 @@ def main():
         FOREIGN KEY (userId) REFERENCES users(userId)
     )''')
 
-    # You will implement these methods below. They just print TO-DO messages for now.
     load_and_clean_users(os.path.join(_RESOURCES_DIR, 'users.csv'))
     load_and_clean_call_logs(os.path.join(_RESOURCES_DIR, 'callLogs.csv'))
     write_user_analytics(os.path.join(_RESOURCES_DIR, 'userAnalytics.csv'))
@@ -48,89 +47,156 @@ def main():
     conn.close()
 
 
-# TODO: Implement the following 4 functions. The functions must pass the unit tests to complete the project.
+# Load and clean CSV data, then generate analytics and ordered call reports.
 
 
 # This function will load the users.csv file into the users table, discarding any records with incomplete data
 def load_and_clean_users(file_path):
-    with open(file_path, "r", newline="") as file:
-        reader = csv.reader(file)
-        # Skip header firstname, lastname
-        next(reader)
-        records = []
+    """
+    Load user data from a CSV file into the SQLite users table.
 
-        for row in reader:
-            if len(row) != 2:
-                continue
+    Discard records with missing or extra fields and remove
+    surrounding whitespace before inserting valid records.
+    """
 
-            if not row[0].strip() or not row[1].strip():
-                continue
+    # Create empty list to hold values for insertion
+    records = []
+    try:
+        with open(file_path, "r", newline="") as file:
+            reader = csv.reader(file)
+            # Skip header firstname, lastname
+            next(reader)
             
-            records.append((row[0].strip(), row[1].strip()))
-        
-    cursor.executemany(
-        '''INSERT INTO users (firstname, lastname) VALUES (?, ?)''', records
-    )
-    conn.commit()
+
+            for row in reader:
+                # Discard records with missing or extra fields.
+                if len(row) != 2:
+                    continue
+
+                if not row[0].strip() or not row[1].strip():
+                    continue
+                
+                records.append((row[0].strip(), row[1].strip()))
+    except OSError as error:
+        print(f"Error reading" {file_path}: {error})
+        raise
+
+    try:   
+        cursor.executemany(
+            '''INSERT INTO users (firstname, lastname) VALUES (?, ?)''', records
+        )
+        conn.commit()
+    except sqlite3.Error as error:
+        conn.rollback()
+        print(f"Error inserting into database: {error}")
+        raise
 
 
 # This function will load the callLogs.csv file into the callLogs table, discarding any records with incomplete data
 def load_and_clean_call_logs(file_path):
-    with open(file_path, "r", newline="") as file:
-        reader = csv.reader(file)
-        # Skip column headers 
-        next(reader)
-        records = []
+    """
+    Load call records from a CSV file into the callLogs table.
 
-        for row in reader:
-            if len(row) != 5:
-                continue
-            valid = all(item.strip() for item in row)
-            if not valid:
-                continue
+    Validate that each record contains five nonempty fields,
+    clean whitespace, and insert valid records into SQLite.
+    """
+
+    # Create empty list to hold values for insertion
+    records = []
+    try:
+        with open(file_path, "r", newline="") as file:
+            reader = csv.reader(file)
+            # Skip column headers 
+            next(reader)
             
-            records.append(tuple(item.strip() for item in row))
+            for row in reader:
+                # Discard records with missing or extra fields.
+                if len(row) != 5:
+                    continue
+                valid = all(item.strip() for item in row)
+                if not valid:
+                    continue
+                
+                records.append(tuple(item.strip() for item in row))
+    except OSError as error:
+        print(f"Error reading: {file_path}: {error}")
+        raise
     
-    cursor.executemany(
-        '''INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId)
-        VALUES (?, ?, ?, ?, ?)''', records
-    )
-    conn.commit()
+    try:
+        cursor.executemany(
+            '''INSERT INTO callLogs (phoneNumber, startTime, endTime, direction, userId)
+            VALUES (?, ?, ?, ?, ?)''', records
+        )
+        conn.commit()
+    except sqlite3.Error as error:
+        conn.rollback()
+        print(f"Error inserting into database: {error}")
+        raise
 
 
 # This function will write analytics data to testUserAnalytics.csv - average call time, and number of calls per user.
 # You must save records consisting of each userId, avgDuration, and numCalls
 # example: 1,105.0,4 - where 1 is the userId, 105.0 is the avgDuration, and 4 is the numCalls.
 def write_user_analytics(csv_file_path):
-    cursor.execute(''' 
-        SELECT userId, AVG(endTime - startTime) as avgDuration, COUNT(userId) as numCalls
-        FROM callLogs
-        GROUP BY userId
-    ''')
+    """
+    Generate a CSV report containing call statistics per user.
 
-    results = cursor.fetchall()
+    Calculate the average call duration and total number of
+    calls for each user using SQL aggregate functions.
+    """
+
+    try:
+        cursor.execute(''' 
+            SELECT userId, AVG(endTime - startTime) as avgDuration, COUNT(userId) as numCalls
+            FROM callLogs
+            GROUP BY userId
+        ''')
+
+        results = cursor.fetchall()
+    except sqlite3.Error as error:
+        print(f"Error retrieving user analytics: {csv_file_path}: {error}")
+        raise
     
-    with open(csv_file_path, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["userId", "avgDuration", "numCalls"])
-        writer.writerows(results)
+    try:
+        with open(csv_file_path, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["userId", "avgDuration", "numCalls"])
+            writer.writerows(results)
+    except OSError as error:
+        print(f"Error opening: {csv_file_path}: {error}")
+        raise
 
 
 # This function will write the callLogs ordered by userId, then start time.
 # Then, write the ordered callLogs to orderedCalls.csv
 def write_ordered_calls(csv_file_path):
-    cursor.execute(''' 
-        SELECT callId, phoneNumber, startTime, endTime, direction, userId
-        FROM callLogs
-        ORDER BY userId, startTime
-    ''')
+    """
+    Export call records from SQLite into an ordered CSV file.
 
-    results = cursor.fetchall()
+    Sort records by userId and then startTime in ascending
+    order before writing them to the output file.
+    """
+    
+    try:
+        cursor.execute(''' 
+            SELECT callId, phoneNumber, startTime, endTime, direction, userId
+            FROM callLogs
+            ORDER BY userId, startTime
+        ''')
 
-    with open(csv_file_path, "w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["callId", "phoneNumber", "startTime", "endTime", "direction", "userId"])
-        writer.writerows(results)
+        results = cursor.fetchall()
+    except sqlite3.Error as error:
+        print(f"Error retrieving ordered calls: {csv_file_path}: {error}")
+        raise
+    
+    try:
+        with open(csv_file_path, "w", newline="") as file:
+            writer = csv.writer(file)
+            writer.writerow(["callId", "phoneNumber", "startTime", "endTime", "direction", "userId"])
+            writer.writerows(results)
+    except OSError as error:
+        print(f"Error opening: {csv_file_path}: {error}")
+        raise
 
 
 # No need to touch the functions below!------------------------------------------
